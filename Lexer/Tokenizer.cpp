@@ -106,7 +106,7 @@ Token Tokenizer::nextToken() {
         return Token(TokenType::IDENTIFIER, identifier, currentLine, currentColumn);
     }
 
-    // Check for numbers
+
     if (std::isdigit(current)) {
         std::string number;
         while (std::isdigit(charPeek())) {
@@ -115,7 +115,6 @@ Token Tokenizer::nextToken() {
         return Token(TokenType::NUMBER, number, currentLine, currentColumn);
     }
 
-    // Handle unknown tokens
     advance();
     return Token(TokenType::UNKNOWN, std::string(1, current), currentLine, currentColumn);
 }
