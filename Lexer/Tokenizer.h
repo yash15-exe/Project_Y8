@@ -21,9 +21,12 @@ private:
     bool isAtEnd() const;
     void skipWhitespace();
 
-KeywordType getKeywordType(const std::string& word) const;
-DelimiterType getDelimiterType(char c) const;
+    static KeywordType getKeywordType(const std::string& word);
+    static DataType Tokenizer::getDataType(const std::string& word) ;
+static DelimiterType getDelimiterType(char c) ;
 OperatorType getOperatorType(char c) const;
+
+    char peekNextChar() const;
 
 public:
     explicit Tokenizer(std::string source);
