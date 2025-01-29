@@ -30,6 +30,8 @@ Y8 is a custom-built JavaScript engine inspired by the V8 engine, designed to su
 4. **Error Handling**: Introduce comprehensive error handling.
 5. **Testing & Debugging**: Perform rigorous testing and debugging to ensure reliability.
 
+### **Status**
+**29th January 2025**: Added Support for lexemeTypes and more token Types.
 ## Notes
 - The lexer will default to single threaded mode unless overridden by a directive.
 - Aim for modularity and reusability in all components.

@@ -16,17 +16,17 @@ private:
     size_t currentPosition;
     std::string source;
 
-    char charPeek() const;
+    [[nodiscard]] char charPeek() const;
     char advance();
-    bool isAtEnd() const;
+    [[nodiscard]] bool isAtEnd() const;
     void skipWhitespace();
 
     static KeywordType getKeywordType(const std::string& word);
-    static DataType Tokenizer::getDataType(const std::string& word) ;
-static DelimiterType getDelimiterType(char c) ;
-OperatorType getOperatorType(char c) const;
+    static DataType getDataType(const std::string& word) ;
+    static DelimiterType getDelimiterType(char c) ;
+    [[nodiscard]] OperatorType getOperatorType(char c) const;
 
-    char peekNextChar() const;
+    [[nodiscard]] char peekNextChar() const;
 
 public:
     explicit Tokenizer(std::string source);

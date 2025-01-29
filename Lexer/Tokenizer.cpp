@@ -5,7 +5,7 @@
 #include "Tokenizer.h"
 #include <optional>
 #include <unordered_map>
-Tokenizer::Tokenizer(std::string source): currentLine(1), currentColumn(1), currentPosition(0), source( move(source)){}
+Tokenizer::Tokenizer(std::string source): currentLine(0), currentColumn(0), currentPosition(0), source( move(source)){}
 
 
 char Tokenizer::advance() {
@@ -34,7 +34,7 @@ char Tokenizer::charPeek() const {
 }
 
 void Tokenizer::skipWhitespace() {
-    if(!isAtEnd()&&isspace(charPeek())) {
+    while (!isAtEnd() && isspace(charPeek())) {
         advance();
     }
 }
@@ -87,8 +87,8 @@ DataType Tokenizer::getDataType(const std::string& word) {
     if (it != dataTypeMap.end()) {
         return it->second;
     }
-    // If the word doesn't match a recognized data type, return a default
-    return DataType::OBJECT;  // Defaulting to OBJECT if not found
+
+    return DataType::OBJECT;
 }
 DelimiterType Tokenizer::getDelimiterType(const char c) {
     static const std::unordered_map<char, DelimiterType> delimiterMap = {
@@ -106,7 +106,7 @@ DelimiterType Tokenizer::getDelimiterType(const char c) {
         {'!', DelimiterType::EXCLAMATION_MARK},
         {'~', DelimiterType::TILDE},
         {'=', DelimiterType::EQUAL},
-        {'!', DelimiterType::NOT_EQUAL},      // For '!='
+        {'!', DelimiterType::NOT_EQUAL},
         {'+', DelimiterType::PLUS},
         {'-', DelimiterType::MINUS},
         {'*', DelimiterType::MULTIPLY},
@@ -114,12 +114,12 @@ DelimiterType Tokenizer::getDelimiterType(const char c) {
         {'%', DelimiterType::MODULUS}
     };
 
-    // Handle double character delimiters (e.g., '!=' and '===')
+
     if (c == '=') {
-        // Look ahead for '==' or '==='
-        return DelimiterType::STRICT_EQUAL; // Will return correct if '===' is found next
+
+        return DelimiterType::STRICT_EQUAL;
     } else if (c == '!') {
-        return DelimiterType::NOT_EQUAL; // Will return correct if '!=' is found next
+        return DelimiterType::NOT_EQUAL;
     }
 
     auto it = delimiterMap.find(c);
@@ -131,39 +131,39 @@ DelimiterType Tokenizer::getDelimiterType(const char c) {
 }
 
 OperatorType Tokenizer::getOperatorType(char c) const {
-    // Single-character operators
+
     switch (c) {
         case '+':
-            if (peekNextChar() == '+') return OperatorType::INCREMENT; // '++'
+            if (peekNextChar() == '+') return OperatorType::INCREMENT;
         return OperatorType::ADD;
         case '-':
-            if (peekNextChar() == '-') return OperatorType::DECREMENT; // '--'
+            if (peekNextChar() == '-') return OperatorType::DECREMENT;
         return OperatorType::SUBTRACT;
         case '*': return OperatorType::MULTIPLY;
         case '/': return OperatorType::DIVIDE;
         case '=':
-            if (peekNextChar() == '=') return OperatorType::EQUAL; // '=='
+            if (peekNextChar() == '=') return OperatorType::EQUAL;
         return OperatorType::ASSIGN;
         case '<':
-            if (peekNextChar() == '=') return OperatorType::LESS_THAN_EQUAL; // '<='
+            if (peekNextChar() == '=') return OperatorType::LESS_THAN_EQUAL;
         return OperatorType::LESS_THAN;
         case '>':
-            if (peekNextChar() == '=') return OperatorType::GREATER_THAN_EQUAL; // '>='
+            if (peekNextChar() == '=') return OperatorType::GREATER_THAN_EQUAL;
         return OperatorType::GREATER_THAN;
         case '&':
-            if (peekNextChar() == '&') return OperatorType::LOGICAL_AND; // '&&'
+            if (peekNextChar() == '&') return OperatorType::LOGICAL_AND;
         return OperatorType::BITWISE_AND;
         case '|':
-            if (peekNextChar() == '|') return OperatorType::LOGICAL_OR; // '||'
+            if (peekNextChar() == '|') return OperatorType::LOGICAL_OR;
         return OperatorType::BITWISE_OR;
         case '^': return OperatorType::BITWISE_XOR;
         case '~': return OperatorType::BITWISE_NOT;
         case '!':
-            if (peekNextChar() == '=') return OperatorType::NOT_EQUAL; // '!='
-        if (peekNextChar() == '=') return OperatorType::STRICT_NOT_EQUAL; // '!=='
+            if (peekNextChar() == '=') return OperatorType::NOT_EQUAL;
+        if (peekNextChar() == '=') return OperatorType::STRICT_NOT_EQUAL;
         return OperatorType::UNKNOWN;
         default:
-            return OperatorType::UNKNOWN;  // If none matched, return unknown
+            return OperatorType::UNKNOWN;
     }
 }
 
@@ -176,19 +176,41 @@ Token Tokenizer::nextToken() {
     skipWhitespace();
 
     if (isAtEnd()) {
-        return {TokenType::UNKNOWN, "", currentLine, currentColumn};  // Use braced initializer list
+        return {TokenType::UNKNOWN, "","Unknown", currentLine, currentColumn};
     }
 
     char current = charPeek();
+    if (current == '"' || current == '\'') {
+        char stringDelimiter = current;
+        std::string value;
+        advance();
 
+        while (!isAtEnd() && charPeek() != stringDelimiter) {
+            if (charPeek() == '\\' && (peekNextChar() == stringDelimiter)) {
+
+                value += advance();
+                value += advance();
+            } else {
+                value += advance();
+            }
+        }
+
+        if (isAtEnd()) {
+            return {TokenType::ERROR, "Unterminated string","Error", currentLine, currentColumn};
+        }
+
+        advance();
+        return {TokenType::STRING, value,"String", currentLine, currentColumn};
+    }
     if (getDelimiterType(current) != DelimiterType::UNKNOWN) {
         advance();
-        return {TokenType::DELIMITER, std::string(1, current), currentLine, currentColumn};  // Use braced initializer list
+        DelimiterType delimiterType = getDelimiterType(current);
+        return {TokenType::DELIMITER, std::string(1, current),delimiterType, currentLine, currentColumn};
     }
 
     if (getOperatorType(current) != OperatorType::UNKNOWN) {
         advance();
-        return {TokenType::OPERATOR, std::string(1, current), currentLine, currentColumn};  // Use braced initializer list
+        return {TokenType::OPERATOR, std::string(1, current),DelimiterType::UNKNOWN, currentLine, currentColumn};
     }
 
     if (std::isalpha(current) || current == '_') {
@@ -196,10 +218,11 @@ Token Tokenizer::nextToken() {
         while (std::isalnum(charPeek()) || charPeek() == '_') {
             identifier += advance();
         }
-        if (getKeywordType(identifier) != KeywordType::UNKNOWN) {
-            return {TokenType::KEYWORD, identifier, currentLine, currentColumn};  // Use braced initializer list
+        KeywordType keyword = getKeywordType(identifier);
+        if (keyword != KeywordType::UNKNOWN) {
+            return {TokenType::KEYWORD, identifier,keyword, currentLine, currentColumn};
         }
-        return {TokenType::IDENTIFIER, identifier, currentLine, currentColumn};  // Use braced initializer list
+        return {TokenType::IDENTIFIER, identifier,KeywordType::UNKNOWN, currentLine, currentColumn};
     }
 
     if (std::isdigit(current)) {
@@ -207,11 +230,11 @@ Token Tokenizer::nextToken() {
         while (std::isdigit(charPeek())) {
             number += advance();
         }
-        return {TokenType::NUMBER, number, currentLine, currentColumn};  // Use braced initializer list
+        return {TokenType::NUMBER, number,IdentifierType::NUMBER, currentLine, currentColumn};
     }
 
     advance();
-    return {TokenType::UNKNOWN, std::string(1, current), currentLine, currentColumn};  // Use braced initializer list
+    return {TokenType::UNKNOWN, std::string(1, current),KeywordType::UNKNOWN, currentLine, currentColumn};
 }
 
 std::vector<Token> Tokenizer::tokenizeAll() {
