@@ -22,6 +22,8 @@ private:
 
     void skipComments();
 
+    bool hasMultithreadingDirective();
+
     void skipWhitespace();
 
     static KeywordType getKeywordType(const std::string& word);

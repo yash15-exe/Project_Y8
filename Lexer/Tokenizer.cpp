@@ -56,6 +56,28 @@ void Tokenizer::skipComments() {
 
     }
 }
+//Function for extracting directive
+bool Tokenizer::hasMultithreadingDirective() {
+
+    skipWhitespace();
+
+
+    if (charPeek() == '/' && peekNextChar() == '/') {
+        advance();
+        advance();
+
+
+        std::string directive;
+        while (!isAtEnd() && charPeek() != '\n') {
+            directive += advance();
+        }
+
+        // Check if the directive contains '@multithreading'
+        return directive.find("@multithreading") != std::string::npos;
+    }
+
+    return false;  // Return false if no such directive is found
+}
 
 //function to retrieve the current char
 char Tokenizer::charPeek() const {
@@ -220,6 +242,12 @@ char Tokenizer::peekNextChar() const {
  *  checks for numeric values
  */
 Token Tokenizer::nextToken() {
+    skipWhitespace();
+    //Will be changed later.
+    if (hasMultithreadingDirective()) {
+        std::cout << "Multi-threading directive found, activating multi-threaded mode" << std::endl;
+    }
+
     skipWhitespace();
     skipComments();
     skipWhitespace();

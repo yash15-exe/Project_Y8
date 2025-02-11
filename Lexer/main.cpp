@@ -8,6 +8,7 @@ std::string lexemeToString(const LexemeType& lexeme);
 
 int main() {
     const std::string sourceCode = R"(
+//@multithreading
 function greet(name) {
 float i = 10.2023.
     if (!name) {
