@@ -8,6 +8,7 @@
 Tokenizer::Tokenizer(std::string source): currentLine(0), currentColumn(0), currentPosition(0), source( move(source)){}
 
 
+//This function handles the traversal of the tokenizer across the input code source.
 char Tokenizer::advance() {
     char currentChar = charPeek();
 
@@ -23,22 +24,52 @@ char Tokenizer::advance() {
     return currentChar;
 }
 
+//------------------------------------Utility Functions---------------------------------------------------
+
+// Just a boolean function to check the termination of source code.
 bool Tokenizer::isAtEnd() const {
     if (currentPosition == source.length()) {
         return true;
     }
     return false;
 }
+
+//for handling comments and not considering then as tokens
+void Tokenizer::skipComments() {
+    if (charPeek() == '/') {
+        if (peekNextChar() == '/') {
+            while (charPeek() != '\n' && !isAtEnd()) {
+                advance();
+            }
+        } else if (peekNextChar() == '*') {
+
+            advance();
+            advance();
+            while (!(charPeek() == '*' && peekNextChar() == '/') && !isAtEnd()) {
+                advance();
+            }
+            if (!isAtEnd()) {
+                advance();
+                advance();
+            }
+        }
+
+    }
+}
+
+//function to retrieve the current char
 char Tokenizer::charPeek() const {
     return isAtEnd() ? '\0' : source[currentPosition];
 }
 
+//function to skip all the whitespaces
 void Tokenizer::skipWhitespace() {
     while (!isAtEnd() && isspace(charPeek())) {
         advance();
     }
 }
 
+//function to tag all the keywords.
 KeywordType Tokenizer::getKeywordType(const std::string& word) {
     static const std::unordered_map<std::string, KeywordType> keywordMap = {
         {"if", KeywordType::IF},
@@ -70,7 +101,7 @@ KeywordType Tokenizer::getKeywordType(const std::string& word) {
     }
     return KeywordType::UNKNOWN;
 }
-
+//function to tag all the datatypes.
 DataType Tokenizer::getDataType(const std::string& word) {
     static const std::unordered_map<std::string, DataType> dataTypeMap = {
         {"string", DataType::STRING},
@@ -90,6 +121,8 @@ DataType Tokenizer::getDataType(const std::string& word) {
 
     return DataType::OBJECT;
 }
+
+//function to tag all the delimiters
 DelimiterType Tokenizer::getDelimiterType(const char c) {
     static const std::unordered_map<char, DelimiterType> delimiterMap = {
         {';', DelimiterType::SEMICOLON},
@@ -130,6 +163,7 @@ DelimiterType Tokenizer::getDelimiterType(const char c) {
     return DelimiterType::UNKNOWN;
 }
 
+//function to tag all the operatorTypes
 OperatorType Tokenizer::getOperatorType(char c) const {
 
     switch (c) {
@@ -167,19 +201,35 @@ OperatorType Tokenizer::getOperatorType(char c) const {
     }
 }
 
-
+//function to get next character
 char Tokenizer::peekNextChar() const {
     return currentPosition + 1 < source.length() ? source[currentPosition + 1] : '\0';
 }
 
+//--------------------------------Main Tokenizer-----------------------------------------------------------
+
+
+//Function Flow --->
+/*
+ * The function takes care of skipping all the whitespaces using skipWhiteSpace function
+ * The function takes care of source code termination with the help of isAtEnd function
+ *  check for delimiters
+ *  checks for operators
+ *  checks for keywords
+ *  checks for identifiers
+ *  checks for numeric values
+ */
 Token Tokenizer::nextToken() {
     skipWhitespace();
-
+    skipComments();
+    skipWhitespace();
     if (isAtEnd()) {
-        return {TokenType::UNKNOWN, "","Unknown", currentLine, currentColumn};
+        return {TokenType::TERMINATION, "","Termination", currentLine, currentColumn};
     }
 
     char current = charPeek();
+
+    // To handle string definitions
     if (current == '"' || current == '\'') {
         char stringDelimiter = current;
         std::string value;
@@ -202,17 +252,21 @@ Token Tokenizer::nextToken() {
         advance();
         return {TokenType::STRING, value,"String", currentLine, currentColumn};
     }
+
+    // To check whether the character is one of the defined delimiters
     if (getDelimiterType(current) != DelimiterType::UNKNOWN) {
         advance();
         DelimiterType delimiterType = getDelimiterType(current);
         return {TokenType::DELIMITER, std::string(1, current),delimiterType, currentLine, currentColumn};
     }
 
+    //to check if the character is one of the defined operator
     if (getOperatorType(current) != OperatorType::UNKNOWN) {
         advance();
         return {TokenType::OPERATOR, std::string(1, current),DelimiterType::UNKNOWN, currentLine, currentColumn};
     }
 
+    // to identify multi-letter keywords and identifiers.
     if (std::isalpha(current) || current == '_') {
         std::string identifier;
         while (std::isalnum(charPeek()) || charPeek() == '_') {
@@ -225,18 +279,36 @@ Token Tokenizer::nextToken() {
         return {TokenType::IDENTIFIER, identifier,KeywordType::UNKNOWN, currentLine, currentColumn};
     }
 
+    // to identify numeric values
+
     if (std::isdigit(current)) {
         std::string number;
-        while (std::isdigit(charPeek())) {
+        bool hasDecimal = false;  // Flag to track if decimal is encountered
+        // to handle decimal values
+        while (std::isdigit(charPeek()) || (!hasDecimal && charPeek() == '.')) {
+            if (charPeek() == '.') {
+                // Ensure that a decimal point is only allowed once, and it's followed by a digit
+                if (!std::isdigit(peekNextChar()) || hasDecimal) {
+                    // Return an error token for invalid decimal format
+                    return {TokenType::ERROR, number, Error::ERROR, currentLine, currentColumn};
+                }
+                hasDecimal = true;
+            }
             number += advance();
         }
-        return {TokenType::NUMBER, number,IdentifierType::NUMBER, currentLine, currentColumn};
+
+
+        return {TokenType::NUMBER, number, IdentifierType::NUMBER, currentLine, currentColumn};
     }
 
+
     advance();
+
+    //corner edge case for unknown situations
     return {TokenType::UNKNOWN, std::string(1, current),KeywordType::UNKNOWN, currentLine, currentColumn};
 }
 
+//returns a vector of tokens
 std::vector<Token> Tokenizer::tokenizeAll() {
     std::vector<Token> tokens;
     while (!isAtEnd()) {

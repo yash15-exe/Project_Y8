@@ -19,6 +19,9 @@ private:
     [[nodiscard]] char charPeek() const;
     char advance();
     [[nodiscard]] bool isAtEnd() const;
+
+    void skipComments();
+
     void skipWhitespace();
 
     static KeywordType getKeywordType(const std::string& word);

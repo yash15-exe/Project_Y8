@@ -9,9 +9,11 @@ std::string lexemeToString(const LexemeType& lexeme);
 int main() {
     const std::string sourceCode = R"(
 function greet(name) {
+float i = 10.2023.
     if (!name) {
         return "Hello, World!";
     }
+//This is a comment
     let message = `Hello, ${name}!`;
     console.log(message);
     return message;
@@ -47,6 +49,7 @@ std::string tokenTypeToString(const TokenType type) {
         case TokenType::COMMENT: return "COMMENT";
         case TokenType::UNKNOWN: return "UNKNOWN";
         case TokenType::ERROR: return "ERROR";
+        case TokenType::TERMINATION: return "TERMINATION";
         default: return "UNKNOWN";
     }
 }

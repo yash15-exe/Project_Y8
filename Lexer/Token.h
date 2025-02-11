@@ -8,7 +8,7 @@
 #ifndef TOKEN_H
 #define TOKEN_H
 
-// Define all necessary enums **before** using them in `LexemeType`
+
 enum class KeywordType {
     IF, ELSE, SWITCH, CASE, DEFAULT,
     WHILE, DO, FOR, BREAK, CONTINUE,
@@ -36,6 +36,9 @@ enum class DelimiterType {
 enum class IdentifierType {
     NUMBER, STRING
 };
+enum class Error {
+    ERROR
+};
 enum class OperatorType {
     ADD, SUBTRACT, MULTIPLY, DIVIDE, ASSIGN,
     LESS_THAN, GREATER_THAN, LESS_THAN_EQUAL, GREATER_THAN_EQUAL,
@@ -46,22 +49,22 @@ enum class OperatorType {
 };
 
 // Define the possible types of `lexeme`
-using LexemeType = std::variant<std::string, char, int, KeywordType, DataType, DelimiterType, OperatorType, IdentifierType>;
+using LexemeType = std::variant<std::string, char, int, KeywordType, DataType, DelimiterType, OperatorType, IdentifierType, Error>;
 
 enum class TokenType {
-    KEYWORD, IDENTIFIER, NUMBER, STRING, OPERATOR, DELIMITER, COMMENT, UNKNOWN, ERROR
+    KEYWORD, IDENTIFIER, NUMBER, STRING, OPERATOR, DELIMITER, COMMENT, UNKNOWN, ERROR, TERMINATION
 };
 
 class Token {
 private:
     TokenType tokenType;
     std::string value;
-    LexemeType lexeme;  // ✅ Correctly using `LexemeType`
+    LexemeType lexeme;
     int line;
     int column;
 
 public:
-    // ✅ No `auto`, replaced with `LexemeType`
+
     Token(TokenType tokenType, std::string value, LexemeType lexeme, int line, int column)
         : tokenType(tokenType), value(std::move(value)), lexeme(std::move(lexeme)), line(line), column(column) {}
 
@@ -72,4 +75,4 @@ public:
     [[nodiscard]] const LexemeType& getLexeme() const { return lexeme; }
 };
 
-#endif //TOKEN_H
+#endif
